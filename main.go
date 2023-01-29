@@ -27,7 +27,7 @@ func loadCertificateId(certDataFile string, domain string, certId *string) {
 
 	file, err := ioutil.ReadFile(certDataFile)
 	if err != nil {
-		fmt.Println("Error reading file")
+		//fmt.Println("Error reading file")
 		return
 	}
 
