@@ -23,10 +23,11 @@ type Domain struct {
 
 func loadCertificateId(certDataFile string, domain string, certId *string) {
 
+	*certId = "0"
+
 	file, err := ioutil.ReadFile(certDataFile)
 	if err != nil {
 		fmt.Println("Error reading file")
-		*certId = "0"
 		return
 	}
 
@@ -34,7 +35,6 @@ func loadCertificateId(certDataFile string, domain string, certId *string) {
 	err = json.Unmarshal(file, &domains)
 	if err != nil {
 		fmt.Println("Error parsing file")
-		*certId = "0"
 		return
 	}
 
@@ -49,14 +49,31 @@ func loadCertificateId(certDataFile string, domain string, certId *string) {
 
 func saveCertificateId(certDataFile string, domain string, certId string) {
 
+	var domainFound bool = false
+	var domains []Domain
 	//read file in structure
 	file, err := ioutil.ReadFile(certDataFile)
 	if err != nil {
-		fmt.Println("Error reading file")
+
+		domains = append(domains, Domain{Domain: domain, CertID: certId})
+
+		//If file doesn't exist, create it
+		newData, err := json.MarshalIndent(domains, "", "    ")
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		err = ioutil.WriteFile(certDataFile, newData, 0644)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
 		return
+
 	}
 
-	var domains []Domain
 	err = json.Unmarshal(file, &domains)
 	if err != nil {
 		fmt.Println("Error parsing file")
@@ -67,8 +84,14 @@ func saveCertificateId(certDataFile string, domain string, certId string) {
 	for idx, d := range domains {
 		if d.Domain == domain {
 			domains[idx].CertID = certId
+			domainFound = true
 			break
 		}
+	}
+
+	// If domain not found, add it to the file
+	if !domainFound {
+		domains = append(domains, Domain{Domain: domain, CertID: certId})
 	}
 
 	newData, err := json.MarshalIndent(domains, "", "    ")
@@ -96,6 +119,7 @@ func main() {
 	// read the host and port from pipeline
 	for scanner.Scan() {
 		domain = scanner.Text()
+		//fmt.Println("Looking for : ", domain)
 
 		loadCertificateId(certDataFile, domain, &lastCertificateid)
 		//fmt.Println("Cert Found : ", lastCertificateid)
